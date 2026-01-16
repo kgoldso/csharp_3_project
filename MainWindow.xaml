@@ -1,58 +1,148 @@
-﻿<Window x:Class="_3_project.MainWindow"
+﻿<mah:MetroWindow x:Class="_3_project.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="CSV Importer" Height="600" Width="900">
-    <Grid Background="White">
-        <StackPanel Margin="10">
-            <!-- Import Section -->
-            <TextBlock Text="1. Import CSV File" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <Button Name="ImportButton" Content="Select and Import CSV" Padding="10,5" Background="Blue" Foreground="White" Width="150" Click="ImportButton_Click"/>
-                <TextBlock Name="ImportStatusText" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="Green"/>
-            </StackPanel>
+        xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+        Title="CSV People Manager" 
+        Height="700" 
+        Width="1000"
+        WindowStartupLocation="CenterScreen"
+        GlowBrush="{DynamicResource MahApps.Brushes.Accent}"
+        BorderThickness="1">
 
-            <!-- Search Section -->
-            <TextBlock Text="2. Search Filters" FontSize="14" FontWeight="Bold" Margin="0,10,0,10"/>
-            <Grid Margin="0,0,0,10">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Import Section -->
+        <GroupBox Header="1. Import CSV File" Grid.Row="0" Margin="0,0,0,15">
+            <StackPanel Margin="10">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Select and Import CSV" 
+                            Width="180" 
+                            Height="35"
+                            Style="{DynamicResource MahApps.Styles.Button.Square.Accent}"
+                            Command="{Binding ImportCommand}"/>
+                    
+                    <TextBlock Text="{Binding StatusMessage}" 
+                               Margin="15,0,0,0" 
+                               VerticalAlignment="Center"
+                               FontSize="13"/>
+                    
+                    <mah:ProgressRing IsActive="{Binding IsLoading}" 
+                                      Width="30" 
+                                      Height="30"
+                                      Margin="15,0,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Search Filters Section -->
+        <GroupBox Header="2. Search Filters" Grid.Row="1" Margin="0,0,0,15">
+            <Grid Margin="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                    <TextBlock Text="First Name:" FontSize="11"/>
-                    <TextBox Name="FirstNameFilter" Padding="5" Height="25"/>
+                <!-- Row 1 -->
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="First Name:" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}" 
+                             mah:TextBoxHelper.ClearTextButton="True"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Margin="5,0,5,0">
-                    <TextBlock Text="Last Name:" FontSize="11"/>
-                    <TextBox Name="LastNameFilter" Padding="5" Height="25"/>
+                <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                    <TextBlock Text="Last Name:" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"
+                             mah:TextBoxHelper.ClearTextButton="True"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" Margin="5,0,5,0">
-                    <TextBlock Text="City:" FontSize="11"/>
-                    <TextBox Name="CityFilter" Padding="5" Height="25"/>
+                <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                    <TextBlock Text="City:" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding City, UpdateSourceTrigger=PropertyChanged}"
+                             mah:TextBoxHelper.ClearTextButton="True"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="3" Margin="5,0,0,0">
-                    <TextBlock Text="Country:" FontSize="11"/>
-                    <TextBox Name="CountryFilter" Padding="5" Height="25"/>
+                <StackPanel Grid.Column="3">
+                    <TextBlock Text="Country:" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding Country, UpdateSourceTrigger=PropertyChanged}"
+                             mah:TextBoxHelper.ClearTextButton="True"/>
                 </StackPanel>
+
+                <!-- Row 2 - Date Filter -->
+                <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,10,10,0">
+                    <TextBlock Text="Date (optional):" Margin="0,0,0,5"/>
+                    <DatePicker SelectedDate="{Binding FilterDate}" 
+                                mah:TextBoxHelper.ClearTextButton="True"/>
+                </StackPanel>
+
+                <Button Grid.Column="1" Grid.Row="1" 
+                        Content="Search" 
+                        Width="120" 
+                        Height="35"
+                        Margin="0,25,0,0"
+                        Style="{DynamicResource MahApps.Styles.Button.Square.Accent}"
+                        Command="{Binding SearchCommand}"/>
             </Grid>
+        </GroupBox>
 
-            <Button Name="SearchButton" Content="Search" Padding="10,5" Background="Green" Foreground="White" Width="100" Margin="0,0,0,10" Click="SearchButton_Click"/>
+        <!-- Results Section -->
+        <GroupBox Header="3. Search Results" Grid.Row="3" Margin="0,0,0,15">
+            <DataGrid ItemsSource="{Binding SearchResults}" 
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      Margin="10"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      SelectionMode="Extended">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="60"/>
+                    <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat=dd.MM.yyyy}" Width="100"/>
+                    <DataGridTextColumn Header="First Name" Binding="{Binding FirstName}" Width="*"/>
+                    <DataGridTextColumn Header="Last Name" Binding="{Binding LastName}" Width="*"/>
+                    <DataGridTextColumn Header="SurName" Binding="{Binding SurName}" Width="*"/>
+                    <DataGridTextColumn Header="City" Binding="{Binding City}" Width="*"/>
+                    <DataGridTextColumn Header="Country" Binding="{Binding Country}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
 
-            <!-- Results Section -->
-            <TextBlock Text="3. Results" FontSize="14" FontWeight="Bold" Margin="0,10,0,10"/>
-            <DataGrid Name="ResultsDataGrid" Height="250" AutoGenerateColumns="True" Margin="0,0,0,10"/>
-
-            <!-- Export Section -->
-            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                <Button Name="ExportExcelButton" Content="Export to CSV" Padding="10,5" Background="Orange" Foreground="White" Width="120" Margin="0,0,5,0" Click="ExportExcelButton_Click"/>
-                <Button Name="ExportXmlButton" Content="Export to XML" Padding="10,5" Background="Purple" Foreground="White" Width="120" Click="ExportXmlButton_Click"/>
+        <!-- Export Section -->
+        <GroupBox Header="4. Export" Grid.Row="4">
+            <StackPanel Orientation="Horizontal" Margin="10">
+                <Button Content="Export to Excel" 
+                        Width="150" 
+                        Height="35"
+                        Margin="0,0,10,0"
+                        Style="{DynamicResource MahApps.Styles.Button.Square}"
+                        Command="{Binding ExportExcelCommand}"/>
+                
+                <Button Content="Export to XML" 
+                        Width="150" 
+                        Height="35"
+                        Style="{DynamicResource MahApps.Styles.Button.Square}"
+                        Command="{Binding ExportXmlCommand}"/>
             </StackPanel>
-        </StackPanel>
+        </GroupBox>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="5" Margin="0,10,0,0">
+            <StatusBarItem>
+                <TextBlock Text="{Binding SearchResults.Count, StringFormat='Total results: {0}'}" 
+                           FontWeight="SemiBold"/>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
-</Window>
+</mah:MetroWindow>
