@@ -1,0 +1,28 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:String x:Key="ImportHeader">1. Import CSV File</sys:String>
+    <sys:String x:Key="ImportButton">Select and Import CSV</sys:String>
+    <sys:String x:Key="SearchHeader">2. Search Filters</sys:String>
+    <sys:String x:Key="LabelFirstName">First Name:</sys:String>
+    <sys:String x:Key="LabelLastName">Last Name:</sys:String>
+    <sys:String x:Key="LabelCity">City:</sys:String>
+    <sys:String x:Key="LabelCountry">Country:</sys:String>
+    <sys:String x:Key="LabelDate">Date (optional):</sys:String>
+    <sys:String x:Key="SearchButton">Search</sys:String>
+    <sys:String x:Key="ResultsHeader">3. Search Results</sys:String>
+    <sys:String x:Key="ExportHeader">4. Export</sys:String>
+    <sys:String x:Key="ExportExcelButton">Export to Excel</sys:String>
+    <sys:String x:Key="ExportXmlButton">Export to XML</sys:String>
+    <sys:String x:Key="ExportLanguageLabel">Language:</sys:String>
+    <sys:String x:Key="ColId">ID</sys:String>
+    <sys:String x:Key="ColDate">Date</sys:String>
+    <sys:String x:Key="ColFirstName">First Name</sys:String>
+    <sys:String x:Key="ColLastName">Last Name</sys:String>
+    <sys:String x:Key="ColSurName">SurName</sys:String>
+    <sys:String x:Key="ColCity">City</sys:String>
+    <sys:String x:Key="ColCountry">Country</sys:String>
+    <sys:String x:Key="StatusTotal">Total results: {0}</sys:String>
+
+</ResourceDictionary>

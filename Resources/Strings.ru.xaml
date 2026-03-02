@@ -1,0 +1,28 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <sys:String x:Key="ImportHeader">1. Импорт CSV файла</sys:String>
+    <sys:String x:Key="ImportButton">Выбрать и импортировать CSV</sys:String>
+    <sys:String x:Key="SearchHeader">2. Фильтры поиска</sys:String>
+    <sys:String x:Key="LabelFirstName">Имя:</sys:String>
+    <sys:String x:Key="LabelLastName">Фамилия:</sys:String>
+    <sys:String x:Key="LabelCity">Город:</sys:String>
+    <sys:String x:Key="LabelCountry">Страна:</sys:String>
+    <sys:String x:Key="LabelDate">Дата (необязательно):</sys:String>
+    <sys:String x:Key="SearchButton">Поиск</sys:String>
+    <sys:String x:Key="ResultsHeader">3. Результаты поиска</sys:String>
+    <sys:String x:Key="ExportHeader">4. Экспорт</sys:String>
+    <sys:String x:Key="ExportExcelButton">Экспорт в Excel</sys:String>
+    <sys:String x:Key="ExportXmlButton">Экспорт в XML</sys:String>
+    <sys:String x:Key="ExportLanguageLabel">Язык:</sys:String>
+    <sys:String x:Key="ColId">ID</sys:String>
+    <sys:String x:Key="ColDate">Дата</sys:String>
+    <sys:String x:Key="ColFirstName">Имя</sys:String>
+    <sys:String x:Key="ColLastName">Фамилия</sys:String>
+    <sys:String x:Key="ColSurName">Отчество</sys:String>
+    <sys:String x:Key="ColCity">Город</sys:String>
+    <sys:String x:Key="ColCountry">Страна</sys:String>
+    <sys:String x:Key="StatusTotal">Всего результатов: {0}</sys:String>
+
+</ResourceDictionary>

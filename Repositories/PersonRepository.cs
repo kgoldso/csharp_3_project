@@ -16,11 +16,22 @@ namespace _3_project.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task AddRangeAsync(IAsyncEnumerable<Person> people, int batchSize = 1000, CancellationToken cancellationToken = default)
+        public async Task<Person?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        {
+            // AsNoTracking: читаем без Change Tracker — быстрее для read-only операций
+            return await _context.People
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        }
+
+        public async Task AddRangeAsync(
+            IAsyncEnumerable<Person> entities,
+            int batchSize = 1000,
+            CancellationToken cancellationToken = default)
         {
             var batch = new List<Person>(batchSize);
 
-            await foreach (var person in people.WithCancellation(cancellationToken))
+            await foreach (var person in entities.WithCancellation(cancellationToken))
             {
                 batch.Add(person);
 
@@ -32,7 +43,7 @@ namespace _3_project.Repositories
                 }
             }
 
-            // Сохраняем остаток
+            // Сохраняем остаток последнего неполного батча
             if (batch.Count > 0)
             {
                 await _context.People.AddRangeAsync(batch, cancellationToken);
@@ -40,9 +51,16 @@ namespace _3_project.Repositories
             }
         }
 
-        public async Task<List<Person>> SearchAsync(string? firstName, string? lastName, string? city, string? country, DateTime? date = null, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyList<Person>> SearchAsync(
+            string? firstName,
+            string? lastName,
+            string? city,
+            string? country,
+            DateTime? date = null,
+            CancellationToken cancellationToken = default)
         {
-            var query = _context.People.AsQueryable();
+            // AsNoTracking: только чтение, Change Tracker не нужен
+            var query = _context.People.AsNoTracking().AsQueryable();
 
             // Фильтрация на уровне БД (важно для производительности)
             if (!string.IsNullOrWhiteSpace(firstName))
@@ -60,12 +78,13 @@ namespace _3_project.Repositories
             if (date.HasValue)
                 query = query.Where(p => p.Date.Date == date.Value.Date);
 
-            return await query.ToListAsync(cancellationToken);
+             return await query.OrderBy(p => p.Id).ToListAsync(cancellationToken);
         }
 
         public async Task<int> GetCountAsync(CancellationToken cancellationToken = default)
         {
-            return await _context.People.CountAsync(cancellationToken);
+            // AsNoTracking: COUNT не требует отслеживания
+            return await _context.People.AsNoTracking().CountAsync(cancellationToken);
         }
     }
 }

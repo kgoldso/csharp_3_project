@@ -1,6 +1,10 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using Microsoft.Win32;
+using _3_project.Helpers;
 using _3_project.Models;
 using _3_project.Repositories;
 using _3_project.Services;
@@ -27,7 +31,10 @@ namespace _3_project.ViewModels
         // Статус и данные
         private string _statusMessage = string.Empty;
         private bool _isLoading;
-        private ObservableCollection<Person> _searchResults = new();
+        private ObservableCollection<Person> _searchResults = [];
+
+        // Язык
+        private string _selectedLanguage = "en";
 
         public MainViewModel(
             IPersonRepository repository,
@@ -41,10 +48,10 @@ namespace _3_project.ViewModels
             _xmlExportService = xmlExportService;
 
             // Инициализация команд
-            ImportCommand = new AsyncRelayCommand(ImportAsync, _ => !IsLoading);
-            SearchCommand = new AsyncRelayCommand(SearchAsync, _ => !IsLoading);
+            ImportCommand      = new AsyncRelayCommand(ImportAsync,      _ => !IsLoading);
+            SearchCommand      = new AsyncRelayCommand(SearchAsync,      _ => !IsLoading);
             ExportExcelCommand = new AsyncRelayCommand(ExportExcelAsync, _ => !IsLoading && SearchResults.Count > 0);
-            ExportXmlCommand = new AsyncRelayCommand(ExportXmlAsync, _ => !IsLoading && SearchResults.Count > 0);
+            ExportXmlCommand   = new AsyncRelayCommand(ExportXmlAsync,   _ => !IsLoading && SearchResults.Count > 0);
         }
 
         #region Properties
@@ -97,6 +104,50 @@ namespace _3_project.ViewModels
             set => SetProperty(ref _searchResults, value);
         }
 
+        public IReadOnlyList<string> AvailableLanguages { get; } = ["en", "ru"];
+
+        public string SelectedLanguage
+        {
+            get => _selectedLanguage;
+            set
+            {
+                SetProperty(ref _selectedLanguage, value);
+                CultureInfo.CurrentUICulture = new CultureInfo(value);
+
+                // Меняем ResourceDictionary для UI
+                var dict = new ResourceDictionary
+                {
+                    Source = new Uri($"Resources/Strings.{value}.xaml", UriKind.Relative)
+                };
+                var existing = Application.Current.Resources.MergedDictionaries
+                    .FirstOrDefault(d => d.Source?.OriginalString.Contains("Strings.") == true);
+                if (existing != null)
+                    Application.Current.Resources.MergedDictionaries.Remove(existing);
+                Application.Current.Resources.MergedDictionaries.Add(dict);
+
+                // Обновляем заголовки колонок DataGrid
+                OnPropertyChanged(nameof(ColId));
+                OnPropertyChanged(nameof(ColDate));
+                OnPropertyChanged(nameof(ColFirstName));
+                OnPropertyChanged(nameof(ColLastName));
+                OnPropertyChanged(nameof(ColSurName));
+                OnPropertyChanged(nameof(ColCity));
+                OnPropertyChanged(nameof(ColCountry));
+            }
+        }
+
+        // Заголовки колонок — читаются из активного ResourceDictionary
+        public string ColId        => GetResource("ColId");
+        public string ColDate      => GetResource("ColDate");
+        public string ColFirstName => GetResource("ColFirstName");
+        public string ColLastName  => GetResource("ColLastName");
+        public string ColSurName   => GetResource("ColSurName");
+        public string ColCity      => GetResource("ColCity");
+        public string ColCountry   => GetResource("ColCountry");
+
+        private static string GetResource(string key) =>
+            Application.Current.Resources[key] as string ?? key;
+
         #endregion
 
         #region Commands
@@ -115,21 +166,18 @@ namespace _3_project.ViewModels
             var openFileDialog = new OpenFileDialog
             {
                 Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
-                Title = "Select CSV file to import"
+                Title  = "Select CSV file to import"
             };
 
             if (openFileDialog.ShowDialog() != true)
                 return;
 
-            IsLoading = true;
+            IsLoading     = true;
             StatusMessage = "Importing...";
 
             try
             {
-                // Потоковая обработка CSV
                 var peopleStream = _csvImportService.ImportFromCsvAsync(openFileDialog.FileName);
-                
-                // Batch insert в БД
                 await _repository.AddRangeAsync(peopleStream, batchSize: 1000);
 
                 var totalCount = await _repository.GetCountAsync();
@@ -148,17 +196,13 @@ namespace _3_project.ViewModels
 
         private async Task SearchAsync(object? parameter)
         {
-            IsLoading = true;
+            IsLoading     = true;
             StatusMessage = "Searching...";
 
             try
             {
                 var results = await _repository.SearchAsync(
-                    FirstName, 
-                    LastName, 
-                    City, 
-                    Country,
-                    FilterDate);
+                    FirstName, LastName, City, Country, FilterDate);
 
                 SearchResults = new ObservableCollection<Person>(results);
                 StatusMessage = $"Found {results.Count} records";
@@ -176,12 +220,12 @@ namespace _3_project.ViewModels
 
         private async Task ExportExcelAsync(object? parameter)
         {
-            IsLoading = true;
+            IsLoading     = true;
             StatusMessage = "Exporting to Excel...";
 
             try
             {
-                var filePath = await _excelExportService.ExportAsync(SearchResults.ToList());
+                var filePath = await _excelExportService.ExportAsync(SearchResults.AsAsyncEnumerable());
                 StatusMessage = $"✓ Exported to Excel";
                 MessageBox.Show($"Exported successfully!\n{filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -198,12 +242,12 @@ namespace _3_project.ViewModels
 
         private async Task ExportXmlAsync(object? parameter)
         {
-            IsLoading = true;
+            IsLoading     = true;
             StatusMessage = "Exporting to XML...";
 
             try
             {
-                var filePath = await _xmlExportService.ExportAsync(SearchResults.ToList());
+                var filePath = await _xmlExportService.ExportAsync(SearchResults.AsAsyncEnumerable());
                 StatusMessage = $"✓ Exported to XML";
                 MessageBox.Show($"Exported successfully!\n{filePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }

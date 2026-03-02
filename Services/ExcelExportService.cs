@@ -1,5 +1,8 @@
+using System.Drawing;
+using System.Globalization;
 using System.IO;
 using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using _3_project.Models;
 
 namespace _3_project.Services
@@ -9,45 +12,62 @@ namespace _3_project.Services
     /// </summary>
     public class ExcelExportService : IExportService
     {
-        public async Task<string> ExportAsync(List<Person> people, CancellationToken cancellationToken = default)
+        // Локализованные хедеры: ru / en
+        private static readonly Dictionary<string, string[]> _headers = new()
         {
-            // EPPlus 7 - простая установка лицензии
+            ["ru"] = ["ID", "Дата", "Имя", "Фамилия", "Отчество", "Город", "Страна"],
+            ["en"] = ["ID", "Date", "First Name", "Last Name", "SurName", "City", "Country"]
+        };
+
+        /// <summary>
+        /// Материализует IAsyncEnumerable в список и экспортирует в .xlsx.
+        /// EPPlus требует случайный доступ к строкам, потоковая запись невозможна.
+        /// </summary>
+        public async Task<string> ExportAsync(
+            IAsyncEnumerable<Person> people,
+            CancellationToken cancellationToken = default)
+        {
+            // EPPlus 7 — установка лицензии
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
+            // Материализуем стрим в список (EPPlus не поддерживает построчный стриминг)
+            var list = new List<Person>();
+            await foreach (var person in people.WithCancellation(cancellationToken))
+                list.Add(person);
+
             string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            string fileName = $"People_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
-            string filePath = Path.Combine(desktopPath, fileName);
+            string fileName    = $"People_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            string filePath    = Path.Combine(desktopPath, fileName);
+
+            // Выбираем локаль: ru или en (fallback)
+            var lang    = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+            var headers = _headers.GetValueOrDefault(lang, _headers["en"]);
 
             await Task.Run(() =>
             {
                 using var package = new ExcelPackage();
-                var worksheet = package.Workbook.Worksheets.Add("People");
+                var worksheet     = package.Workbook.Worksheets.Add("People");
 
-                // Заголовки
-                worksheet.Cells[1, 1].Value = "ID";
-                worksheet.Cells[1, 2].Value = "Date";
-                worksheet.Cells[1, 3].Value = "First Name";
-                worksheet.Cells[1, 4].Value = "Last Name";
-                worksheet.Cells[1, 5].Value = "SurName";
-                worksheet.Cells[1, 6].Value = "City";
-                worksheet.Cells[1, 7].Value = "Country";
+                // Заголовки с локализацией
+                for (int col = 0; col < headers.Length; col++)
+                    worksheet.Cells[1, col + 1].Value = headers[col];
 
                 // Стиль заголовка
-                using (var range = worksheet.Cells[1, 1, 1, 7])
+                using (var range = worksheet.Cells[1, 1, 1, headers.Length])
                 {
                     range.Style.Font.Bold = true;
-                    range.Style.Fill.PatternType = OfficeOpenXml.Style.ExcelFillStyle.Solid;
-                    range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(Color.LightGray);
                 }
 
                 // Данные
-                for (int i = 0; i < people.Count; i++)
+                for (int i = 0; i < list.Count; i++)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
 
-                    var person = people[i];
-                    int row = i + 2;
+                    var person = list[i];
+                    int row    = i + 2;
 
                     worksheet.Cells[row, 1].Value = person.Id;
                     worksheet.Cells[row, 2].Value = person.Date.ToString("dd.MM.yyyy");

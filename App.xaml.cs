@@ -1,5 +1,7 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Windows;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using _3_project.Data;
 using _3_project.Repositories;
@@ -18,18 +20,16 @@ namespace _3_project
 
             try
             {
-                // Настройка Dependency Injection
                 var services = new ServiceCollection();
                 ConfigureServices(services);
                 _serviceProvider = services.BuildServiceProvider();
 
-                // Создание главного окна через DI
                 var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
                 mainWindow.Show();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Startup Error:\n\n{ex.Message}\n\nInner: {ex.InnerException?.Message}\n\nStack:\n{ex.StackTrace}", 
+                MessageBox.Show($"Startup Error:\n\n{ex.Message}\n\nInner: {ex.InnerException?.Message}\n\nStack:\n{ex.StackTrace}",
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
             }
@@ -37,9 +37,18 @@ namespace _3_project
 
         private void ConfigureServices(IServiceCollection services)
         {
+            // Читаем connection string из appsettings.json
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                .Build();
+
+            var connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
             // DbContext
             services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer("Server=localhost;Database=CsvPeopleDb;Trusted_Connection=True;TrustServerCertificate=True;"));
+                options.UseSqlServer(connectionString));
 
             // Repositories
             services.AddScoped<IPersonRepository, PersonRepository>();
